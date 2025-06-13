@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Edit Contact</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div id="avatarImage" class="avatar-container"></div>
+    <h1>Edit Contact</h1>
+    <form id="editForm" class="contact-form">
+      <div><label for="firstname">First Name:</label><input id="firstname" name="firstname" required></div>
+      <div><label for="lastname">Last Name:</label><input id="lastname" name="lastname" required></div>
+      <div><label for="mobile">Mobile:</label><input id="mobile" name="mobile" required></div>
+      <div><label for="email">Email:</label><input type="email" id="email" name="email" required></div>
+      <div><label for="avatar">Avatar:</label><input type="file" id="avatar" name="avatar" accept="image/*"></div>
+      <input type="hidden" id="id" name="id" />
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Save</button>
+        <button type="button" onclick="goHome()" class="btn-secondary">Cancel</button>
+      </div>
+    </form>
+    <button onclick="goHome()" class="btn-home">Home</button>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const contactId = urlParams.get("id");
+    
+    if (!contactId) {
+      goHome();
+    } else {
+      document.getElementById("id").value = contactId;
+      fetchContact();
+    }
+
+    function fetchContact() {
+      fetch(`${rootPath}controller/get-contact/?id=${contactId}&apiKey=${apiKey}`)
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to fetch contact");
+          return res.json();
+        })
+        .then(contact => {
+          document.getElementById("firstname").value = contact.firstname;
+          document.getElementById("lastname").value = contact.lastname;
+          document.getElementById("mobile").value = contact.mobile;
+          document.getElementById("email").value = contact.email;
+          
+          document.getElementById("avatarImage").innerHTML = `
+            <img src="${rootPath}controller/uploads/${contact.avatar || 'default.png'}" alt="Avatar" />
+          `;
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Error loading contact");
+        });
+    }
+
+    document.getElementById("editForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      formData.append("apiKey", apiKey);
+
+      fetch(`${rootPath}controller/update-contact/`, {
+        method: "POST",
+        body: formData
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.text();
+      })
+      .then(data => {
+        if (data === "1") {
+          alert("Contact updated successfully!");
+          goHome();
+        } else {
+          throw new Error(data || "Unknown error");
+        }
+      })
+      .catch(err => {
+        console.error("Update error:", err);
+        alert("Error updating contact: " + err.message);
+      });
+    });
+
+    function goHome() {
+      window.location = "index.html";
+    }
+  </script>
+</body>
+</html>

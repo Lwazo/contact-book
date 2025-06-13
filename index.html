@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact Book</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body onload="fetchContacts()">
+  <div class="container">
+    <h1>My Contacts</h1>
+    <div class="action-buttons">
+      <button id="refresh" class="btn-primary">Refresh</button>
+      <button id="addContact" class="btn-success">Add Contact</button>
+    </div>
+    <div id="table" class="contact-table">Loading contacts...</div>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    document.getElementById("refresh").addEventListener("click", fetchContacts);
+    document.getElementById("addContact").addEventListener("click", () => {
+      window.location = "add-contact.html";
+    });
+
+    function fetchContacts() {
+      fetch(`${rootPath}controller/get-contacts/?apiKey=${apiKey}`)
+        .then(res => {
+          if (!res.ok) throw new Error("Network response was not ok");
+          return res.json();
+        })
+        .then(data => displayOutput(data))
+        .catch((err) => {
+          console.error("Error:", err);
+          document.getElementById("table").innerText = "Error loading contacts";
+        });
+    }
+
+    function displayOutput(data) {
+      if (!data || !data.length) {
+        document.getElementById("table").innerText = "No contacts found.";
+        return;
+      }
+
+      let output = `
+        <table>
+          <thead>
+            <tr><th>Avatar</th><th>First Name</th><th>Last Name</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+      `;
+
+      data.forEach(contact => {
+        output += `
+          <tr>
+            <td><img src="${rootPath}controller/uploads/${contact.avatar || 'default.png'}" alt="Avatar" /></td>
+            <td>${contact.firstname}</td>
+            <td>${contact.lastname}</td>
+            <td>
+              <button class="btn-warning" onclick="goToEdit(${contact.id})">Edit</button>
+              <button class="btn-danger" onclick="deleteContact(${contact.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      output += "</tbody></table>";
+      document.getElementById("table").innerHTML = output;
+    }
+
+    function goToEdit(id) {
+      window.location = `edit-contact.html?id=${id}`;
+    }
+
+    function deleteContact(id) {
+      if (!confirm("Are you sure you want to delete this contact?")) return;
+
+      fetch(`${rootPath}controller/delete-contact/?id=${id}&apiKey=${apiKey}`, {
+        method: "POST"
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.text();
+      })
+      .then(data => {
+        if (data === "1") {
+          alert("Contact deleted successfully!");
+          fetchContacts();
+        } else {
+          throw new Error(data || "Unknown error");
+        }
+      })
+      .catch(err => {
+        console.error("Delete error:", err);
+        alert("Error deleting contact: " + err.message);
+      });
+    }
+  </script>
+</body>
+</html>

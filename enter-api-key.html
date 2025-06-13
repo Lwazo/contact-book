@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Key</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container api-key-container">
+    <h1>Welcome to Contact Book</h1>
+    <div class="prompt">Please enter a valid API key to continue</div>
+    <form id="apiKeyForm" class="api-key-form">
+      <input type="text" id="apiKey" name="apiKey" required placeholder="Enter your API key" />
+      <button type="submit" class="btn-primary">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const rootPath = "https://mysite.itvarsity.org/api/ContactBook/";
+
+    document.getElementById("apiKeyForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const apiKey = document.getElementById("apiKey").value.trim();
+
+      fetch(`${rootPath}controller/api-key/?apiKey=${encodeURIComponent(apiKey)}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.text();
+        })
+        .then(data => {
+          if (data === "1") {
+            localStorage.setItem("apiKey", apiKey);
+            window.location = "index.html";
+          } else {
+            throw new Error("Invalid API key");
+          }
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Error validating API key: " + err.message);
+        });
+    });
+  </script>
+</body>
+</html>
